@@ -1,0 +1,6 @@
+{"timestamp": "2025-07-23T12:26:27.879867", "event_type": "ATTACK_SIMULATED", "details": {"attack_type": "directory_traversal", "target": "web_server", "success": true, "output": "found /etc/passwd"}}
+{"timestamp": "2025-07-23T12:26:28.380482", "event_type": "ATTACK_SIMULATED", "details": {"attack_type": "sql_injection", "target": "db_server", "success": false, "output": "connection refused"}}
+{"timestamp": "2025-07-23T12:26:28.881671", "event_type": "ANOMALY_DETECTED", "details": {"type": "failed_login", "source_ip": "10.0.0.5"}}
+{"timestamp": "2025-07-23T12:26:29.382302", "event_type": "DEFENSE_EXECUTED", "details": {"action": "block_ip", "target": "10.0.0.5", "success": true, "reason": "repeated failed login"}}
+{"timestamp": "2025-07-23T12:26:29.883104", "event_type": "ANOMALY_DETECTED", "details": {"type": "data_exfil_attempt", "source_host": "compromised_server"}}
+{"timestamp": "2025-07-23T12:26:30.383892", "event_type": "DEFENSE_EXECUTED", "details": {"action": "isolate_host", "target": "compromised_server", "success": true, "reason": "data exfiltration attempt"}}
