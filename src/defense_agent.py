@@ -85,7 +85,7 @@ def execute_automated_response(anomaly_details: dict) -> dict:
         if response_type == "block_ip" and target != "unknown":
             print(f"Simulating firewall rule addition: Blocking attacker IP {target} on scenario_web_server...")
             # In a real scenario, this would execute `iptables` or similar command
-            exit_code, output = container.exec_run(f"iptables -A INPUT -s {target} -j DROP")
+            exit_code, output = container.exec_run(f"iptables -A INPUT -s {target} -j DROP", user='root')
             output = output.decode('utf-8').strip()
             if exit_code == 0:
                 print(f"Simulated IP block successful. Output: {output}")

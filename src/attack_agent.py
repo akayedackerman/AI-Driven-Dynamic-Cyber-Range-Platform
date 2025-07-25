@@ -4,6 +4,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_community.llms import Ollama # Import Ollama for local LLM
 import docker # Python client for Docker
 from dotenv import load_dotenv
+from src.caldera_api_client import CalderaApiClient
 
 # Load environment variables (e.g., API keys) from a .env file
 load_dotenv()
@@ -12,6 +13,8 @@ load_dotenv()
 # Ensure Ollama server is running (e.g., via `ollama run llama2` in a separate terminal).
 # 'llama2' should be the name of the model you pulled.
 llm = Ollama(model="mistral") # This is your ONLY LLM assignment
+# Initialize Caldera API client
+caldera_client = CalderaApiClient()
 
 # --- Attack Agent Core Logic ---
 def get_attack_decision(vulnerability_info: str, target_service: str) -> str:
@@ -75,6 +78,20 @@ def simulate_attack_step(target_container_name: str, attack_type: str) -> dict:
             exit_code, output = container.exec_run("ls -la /etc/")
             output = output.decode('utf-8').strip()
             print(f"Simulated command output (exit code {exit_code}):\n{output[:200]}...")
+
+            if exit_code == 0:
+                print(f"** Successfully found sensitive info via directory traversal on {target_container_name}. **")
+                print("Simulating deployment of Caldera agent to compromised host...")
+                # This is still a mock deploy for demonstration, as actual Caldera agent deploy requires specific payloads
+                # In a real deep integration, this would use a more complex Caldera API for agent install
+                # For now, we'll just conceptually indicate deployment
+                deployed_agent_info = caldera_client.deploy_agent("sandcat_linux", "my_web_server_group")  # Mock call
+                print(f"** Simulated Caldera Agent ID: {deployed_agent_info['agent_id']} deployed. **")
+                return {"success": True, "output": output, "agent_deployed": True,
+                        "agent_id": deployed_agent_info['agent_id']}
+            else:
+                return {"success": False, "output": output}
+
             return {"success": exit_code == 0, "output": output}
         elif "sql injection" in parsed_attack_type: # Use parsed_attack_type here
             print(f"Executing simulated SQL injection on {target_container_name} (via app_server)...")

@@ -60,26 +60,38 @@ def run_cyber_range_exercise(duration_seconds=10):
         time.sleep(0.5)
 
         attack_result = simulate_attack_step(target_container, attack_decision)
-        log_event("ATTACK_SIMULATED", {"attack_type": attack_decision, "target": target_container, "success": attack_result['success'], "output": attack_result['output']})
+        agent_deployed_status = attack_result.get("agent_deployed", False)
+        log_event("ATTACK_SIMULATED",
+                  {"attack_type": attack_decision, "target": target_container, "success": attack_result['success'],
+                   "output": attack_result['output'], "agent_deployed": agent_deployed_status})
+
         if not attack_result['success']:
             print(f"Attack failed for {target_container}. Adjusting strategy.")
-            # Simulate dynamic environment adjustment (feedback loop: Attack -> Scenario Gen)
-            simulate_env_adjustment("DEFENDER_WEAKNESS_IDENTIFIED", {"skill_gap": "Attack Resilience"}) # Conceptual
+            simulate_env_adjustment("DEFENDER_WEAKNESS_IDENTIFIED",
+                                    {"skill_gap": "Attack Resilience", "target_container": target_container})
         else:
             print(f"Attack succeeded for {target_container}. Proceeding.")
+            if agent_deployed_status:
+                print(f"** CALDERA agent conceptually deployed to {target_container}. **")
+                # You could add logic here to then start a Caldera operation with this agent
         time.sleep(1)
 
         # --- Adaptive Defense Decision-Making ---
         defense_counter += 1
         print(f"DEFENSE AGENT (Cycle {defense_counter}): Analyzing logs...")
         # Simulate receiving a new log entry
-        mock_log_entry = random.choice([
-            f"[INFO] User bob logged in successfully from 192.168.1.100.",  # Normal
-            f"[ALERT] Multiple failed login attempts from 10.0.0.{random.randint(1, 255)} for user 'root'!",  # Rule 2
-            f"[CRITICAL] Unauthorized file access detected on scenario_web_server for sensitive.conf!",  # Rule 3
-            f"[WARNING] Unusual process 'nc -lvp 4444' started on scenario_app_server.",  # Keyword match
-            f"[ERROR] Service 'web_db_api' crashed due to segmentation fault."  # Potential anomaly
-        ])
+        # Ensure this is inside the while loop
+        if defense_counter == 1:  # Force a specific log for the first defense cycle
+            mock_log_entry = f"[ALERT] Multiple failed login attempts from 10.0.0.{random.randint(1, 255)} for user 'root'!"
+        else:
+            mock_log_entry = random.choice([
+                f"[INFO] User bob logged in successfully from 192.168.1.100.",
+                f"[ALERT] Multiple failed login attempts from 10.0.0.{random.randint(1, 255)} for user 'root'!",
+                # Still include for other cycles
+                f"[CRITICAL] Unauthorized file access detected on scenario_web_server for sensitive.conf!",
+                f"[WARNING] Unusual process 'nc -lvp 4444' started on scenario_app_server.",
+                f"[ERROR] Service 'web_db_api' crashed due to segmentation fault."
+            ])
         log_event("RAW_LOG_ENTRY", {"log": mock_log_entry}) # Log raw input for defense
 
         is_anomaly = analyze_log_entry(mock_log_entry)
@@ -98,11 +110,18 @@ def run_cyber_range_exercise(duration_seconds=10):
             defense_result = execute_automated_response(response_details)
             log_event("DEFENSE_EXECUTED", {"action_details": defense_result})
 
-            if defense_result['success'] and "block_ip" in defense_result['action'].lower():
+            if defense_result['success'] and (
+                    defense_result['action'].lower() == "ip_blocked" or defense_result[
+                'action'].lower() == "host_isolated"):
                 # Simulate dynamic environment adjustment (feedback loop: Defense -> Scenario Gen)
-                simulate_env_adjustment("ATTACK_BLOCKED", {"attacker_ip": defense_result['target']})
+                simulate_env_adjustment("ATTACK_BLOCKED",
+                                        {"attacker_ip": defense_result['target']})  # Indicate successful mitigation
             else:
-                simulate_env_adjustment("ATTACK_DETECTED", {"details": "Failed to fully mitigate."})
+                # If defense failed or was just a review_alert, it implies the attack is still ongoing or unmitigated
+                print(
+                    f"Defense action '{defense_result.get('action', 'N/A')}' failed or was insufficient. Triggering containment.")
+                simulate_env_adjustment("ATTACK_DETECTED", {"details": "Failed to fully mitigate.",
+                                                            "target_container": "scenario_web_server"})  # Force stop web_server for any unmitigated attack
         else:
             print("No anomaly detected by Defense Agent.")
         time.sleep(1)

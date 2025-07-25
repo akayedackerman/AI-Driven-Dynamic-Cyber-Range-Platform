@@ -22,8 +22,13 @@ resource "docker_network" "scenario_net" {
 
 # --- Define Docker Images ---
 # Nginx Web Server Image
+# NEW CODE to build custom Nginx image with iptables
 resource "docker_image" "nginx_image" {
-  name = "nginx:latest"
+  name = "custom-nginx-iptables:latest" # New name for your custom image
+  build {
+  path = "../dockerfiles" # Correct argument name
+  dockerfile = "nginx-iptables.Dockerfile"
+  }
   keep_locally = true # Keep the image after terraform destroy
 }
 
@@ -53,8 +58,8 @@ resource "docker_container" "web_server" {
     name = docker_network.scenario_net.name
     aliases = ["web"] # Alias for easy resolution within the network
   }
-  # Ensure network is created before container
-  depends_on = [docker_network.scenario_net]
+  privileged = true # <--- ADD THIS LINE to enable iptables
+  # ... rest of the container definition ...
 }
 
 # 2. Application Server Container (placeholder for business logic)
